@@ -1,0 +1,110 @@
+"""
+Custom VBA code for sample cleaning for finding Strong and weak binders.
+"""
+
+Sub SummarizePeptideBinding()
+
+    Dim inputSheetName As String
+    Dim outputSheetName As String
+    Dim wsInput As Worksheet, wsOutput As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim dict As Object
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    inputSheetName = InputBox("Enter the name of the input sheet:")
+    outputSheetName = InputBox("Enter the name of the output sheet:")
+    
+    On Error Resume Next
+    Set wsInput = Worksheets(inputSheetName)
+    Set wsOutput = Worksheets(outputSheetName)
+    On Error GoTo 0
+    
+    If wsInput Is Nothing Then
+        MsgBox "Input sheet not found!", vbCritical
+        Exit Sub
+    End If
+    
+    If wsOutput Is Nothing Then
+        Set wsOutput = Worksheets.Add
+        wsOutput.Name = outputSheetName
+    Else
+        wsOutput.Cells.Clear
+    End If
+    
+    ' Identify columns
+    Dim colPeptide As Long, colHLA As Long, colRank As Long
+    colPeptide = 0: colHLA = 0: colRank = 0
+    
+    ' Scan header row
+    For i = 1 To wsInput.Cells(1, Columns.Count).End(xlToLeft).Column
+        Select Case Trim(LCase(wsInput.Cells(1, i).Value))
+            Case "peptide": colPeptide = i
+            Case "hla_type": colHLA = i
+            Case "rank": colRank = i
+        End Select
+    Next i
+    
+    If colPeptide = 0 Or colHLA = 0 Or colRank = 0 Then
+        MsgBox "One or more required columns (Peptide, HLA_Type, Rank) not found!", vbCritical
+        Exit Sub
+    End If
+    
+    lastRow = wsInput.Cells(wsInput.Rows.Count, colPeptide).End(xlUp).Row
+    
+    ' Process rows
+    For i = 2 To lastRow
+        Dim pep As String, hla As String, rankVal As Variant
+        pep = Trim(wsInput.Cells(i, colPeptide).Value)
+        hla = Trim(wsInput.Cells(i, colHLA).Value)
+        rankVal = wsInput.Cells(i, colRank).Value
+        
+        ' Convert rank to double safely
+        If IsNumeric(rankVal) Then
+            rankVal = CDbl(rankVal)
+        Else
+            GoTo SkipRow
+        End If
+        
+        If Not dict.exists(pep) Then
+            dict.Add pep, Array(0, 0, "") ' WeakCount, StrongCount, AlleleString
+        End If
+        
+        Dim info As Variant
+        info = dict(pep)
+        
+        If rankVal < 1 Then
+            info(1) = info(1) + 1
+            If info(2) = "" Then
+                info(2) = hla
+            Else
+                info(2) = info(2) & ", " & hla
+            End If
+        ElseIf rankVal < 5 Then
+            info(0) = info(0) + 1
+        End If
+        
+        dict(pep) = info
+SkipRow:
+    Next i
+    
+    ' Write output
+    wsOutput.Cells(1, 1).Value = "Peptide"
+    wsOutput.Cells(1, 2).Value = "Weak Bindings"
+    wsOutput.Cells(1, 3).Value = "Str. Bindings"
+    wsOutput.Cells(1, 4).Value = "Alleles"
+    
+    Dim rowOut As Long: rowOut = 2
+    Dim key As Variant
+    
+    For Each key In dict.Keys
+        wsOutput.Cells(rowOut, 1).Value = key
+        wsOutput.Cells(rowOut, 2).Value = dict(key)(0)
+        wsOutput.Cells(rowOut, 3).Value = dict(key)(1)
+        wsOutput.Cells(rowOut, 4).Value = dict(key)(2)
+        rowOut = rowOut + 1
+    Next key
+    
+    MsgBox "Summary created in sheet: " & outputSheetName, vbInformation
+
+End Sub
