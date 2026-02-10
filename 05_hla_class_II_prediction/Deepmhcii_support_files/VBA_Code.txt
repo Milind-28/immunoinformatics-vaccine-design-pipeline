@@ -1,0 +1,89 @@
+Sub SummarizePeptideBinding()
+
+    Dim rawSheetName As String, summarySheetName As String
+    Dim wsRaw As Worksheet, wsSummary As Worksheet
+    Dim dictPeptides As Object
+    Set dictPeptides = CreateObject("Scripting.Dictionary")
+    
+    Dim lastRow As Long
+    Dim i As Long
+    Dim peptide As String, allele As String
+    Dim affinity As Double
+    Dim weakCount As Long, strongCount As Long
+    Dim strongAlleles As String
+    Dim data As Variant
+    Dim rowOut As Long
+    Dim key As Variant
+
+    ' Ask user for sheet names
+    rawSheetName = InputBox("Enter the name of the input data sheet (e.g., 'RawData'):", "Input Sheet")
+    If rawSheetName = "" Then Exit Sub
+
+    summarySheetName = InputBox("Enter the name for the summary output sheet (e.g., 'Summary'):", "Output Sheet")
+    If summarySheetName = "" Then Exit Sub
+
+    ' Set worksheet references
+    On Error Resume Next
+    Set wsRaw = ThisWorkbook.Sheets(rawSheetName)
+    If wsRaw Is Nothing Then
+        MsgBox "Input sheet '" & rawSheetName & "' not found!", vbCritical
+        Exit Sub
+    End If
+    On Error GoTo 0
+
+    On Error Resume Next
+    Set wsSummary = ThisWorkbook.Sheets(summarySheetName)
+    If wsSummary Is Nothing Then
+        Set wsSummary = ThisWorkbook.Sheets.Add(After:=wsRaw)
+        wsSummary.Name = summarySheetName
+    Else
+        wsSummary.Cells.Clear
+    End If
+    On Error GoTo 0
+
+    ' Get last row in input
+    lastRow = wsRaw.Cells(wsRaw.Rows.Count, "A").End(xlUp).Row
+
+    ' Process data
+    For i = 2 To lastRow
+        allele = Trim(wsRaw.Cells(i, 1).Value)
+        peptide = Trim(wsRaw.Cells(i, 2).Value)
+        affinity = wsRaw.Cells(i, 3).Value
+
+        If Not dictPeptides.exists(peptide) Then
+            dictPeptides.Add peptide, Array(0, 0, "") ' Weak, Strong, Alleles
+        End If
+
+        data = dictPeptides(peptide)
+
+        If affinity > 0.638438 Then
+            data(1) = data(1) + 1
+            If data(2) = "" Then
+                data(2) = allele
+            Else
+                data(2) = data(2) & ", " & allele
+            End If
+        ElseIf affinity > 0.426 Then
+            data(0) = data(0) + 1
+        End If
+
+        dictPeptides(peptide) = data
+    Next i
+
+    ' Output to summary sheet
+    wsSummary.Range("A1:D1").Value = Array("Peptide", "Weak Bindings", "Strong Bindings", "Strong Binding Alleles")
+    rowOut = 2
+
+    For Each key In dictPeptides.keys
+        data = dictPeptides(key)
+        wsSummary.Cells(rowOut, 1).Value = key
+        wsSummary.Cells(rowOut, 2).Value = data(0)
+        wsSummary.Cells(rowOut, 3).Value = data(1)
+        wsSummary.Cells(rowOut, 4).Value = data(2)
+        rowOut = rowOut + 1
+    Next key
+
+    MsgBox "Summary successfully created in sheet '" & summarySheetName & "'.", vbInformation
+
+End Sub
+
