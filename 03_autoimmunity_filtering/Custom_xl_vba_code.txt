@@ -1,0 +1,18 @@
+Function ContainsSevenLetters(cell As Range) As Boolean
+    ' If the cell is empty or has an error, exit early
+    If IsEmpty(cell) Or IsError(cell) Then 
+        Contains7Letters = False
+        Exit Function
+    End If
+
+    Dim re As Object
+    Set re = CreateObject("VBScript.RegExp")
+    
+    With re
+        .Pattern = "[A-Za-z]{7,}"
+        .IgnoreCase = True
+        .Global = False
+    End With
+    
+    ContainsSevenLetters = re.Test(cell.Value)
+End Function

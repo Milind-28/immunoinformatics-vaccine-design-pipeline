@@ -1,0 +1,83 @@
+---
+title: "NetMHCpan HLA Class I Result Combiner"
+author: "Milind Shrivastava"
+output: Excel_document
+---
+
+### Purpose
+This report consolidates cleaned NetMHCpan HLA Class I prediction outputs
+across multiple allele batches into a unified dataset for downstream
+biological filtering and epitope prioritization.
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(readxl)
+library(dplyr)
+library(purrr)
+```
+
+```{r}
+file_paths <- list.files(path = "D:/Thaper_Admission/Severe_Fever_With_Thrombocytopenia/SSTWBRLO/netMHCpan_results/Protein_1_results/Cleaned/", pattern = "cleaned_.*\\.xlsx$", full.names = TRUE)
+
+# Read all files into a list of dataframes
+all_data <- file_paths %>%
+  map(read_excel)
+```
+
+
+
+```{r}
+combined_data <- bind_rows(all_data)
+combined_data<- combined_data[, !names(combined_data) %in% c("Ave", "NB")]
+```
+
+```{r}
+library(writexl)
+
+# Save the combined data to a new Excel file
+write_xlsx(combined_data, "example_results.xlsx")
+```
+```{r}
+library(openxlsx)
+library(tidyverse)
+library(readxl)
+library(writexl)
+
+# Define folder path
+cleaned_folder <- "D:/Thaper_Admission/Severe_Fever_With_Thrombocytopenia/"
+combined_file_path <- file.path(cleaned_folder, "example_results.xlsx")
+
+# Get all cleaned files
+file_paths <- list.files(cleaned_folder, pattern = "cleaned_.*\\.xlsx$", full.names = TRUE)
+
+# Function to standardize column types
+standardize_types <- function(data) {
+  data %>%
+    mutate(across(everything(), as.character))  # Convert all columns to character
+}
+
+# Read and standardize all files
+all_data <- file_paths %>%
+  map(read_excel) %>%
+  map(standardize_types)
+
+# Combine all standardized data frames
+combined_data <- bind_rows(all_data)
+
+# Write the combined data to an Excel file
+write.xlsx(combined_data, combined_file_path)
+
+message("Combined data saved to: ", combined_file_path)
+
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
