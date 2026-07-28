@@ -17,7 +17,7 @@ The repository documents **how the computational workflow is structured and exec
 7. Structural validation and visualization
 
 
-A detailed workflow description is available in `docs/workflow_overview.md`.
+A detailed workflow description is available in `SFTSV.pptx`.
 
 
 ## Data Availability
