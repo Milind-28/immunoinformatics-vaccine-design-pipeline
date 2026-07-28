@@ -1,10 +1,10 @@
 # SFTSV Immunoinformatics Workflow
 
 
-This repository contains a **publication‑safe skeleton implementation** of an immunoinformatics‑based multi‑epitope vaccine design workflow developed during an MSc Biotechnology thesis.
+This repository contains supporting files and final presented presentation of my immunoinformatics‑based multi‑epitope vaccine design workflow developed during my MSc Biotechnology thesis.
 
 
-The repository documents **how the computational workflow is structured and executed**, while intentionally excluding unpublished results and licensed third‑party software.
+The repository documents **how the computational workflow is structured and executed**, while intentionally excluding unpublished supplementary files and licensed third‑party software.
 
 
 ## Workflow Summary
